@@ -1,36 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 3
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-Laboratory for Advanced Computing (LAC)
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.lac.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This header file contains the definitions of common types and utility classes.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/07/2007
+   Yunhong Gu, last updated 09/08/2007
 *****************************************************************************/
 
 #ifndef __UDT_COMMON_H__
@@ -40,9 +45,6 @@ written by
 #ifndef WIN32
    #include <sys/time.h>
    #include <sys/uio.h>
-   #include <sys/types.h>
-   #include <sys/socket.h>
-   #include <netinet/in.h>
    #include <pthread.h>
 #else
    #include <windows.h>
@@ -62,24 +64,17 @@ written by
       int iov_len;
       char* iov_base;
    };
-
-   int gettimeofday(timeval *tv, void*);
 #endif
 
-#ifdef UNIX
-   #define usleep(usec) \
-   { \
-      struct timeval _timeout; \
-      _timeout.tv_sec  = 0; \
-      _timeout.tv_usec = usec; \
-      ::select (0, NULL, NULL, NULL, &_timeout); \
-   }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class CTimer
 {
+public:
+   CTimer();
+   ~CTimer();
+
 public:
 
       // Functionality:
@@ -109,6 +104,15 @@ public:
 
    void interrupt();
 
+      // Functionality:
+      //    trigger the clock for a tick, for better granuality in no_busy_waiting timer.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    None.
+
+   void tick();
+
 public:
 
       // Functionality:
@@ -129,8 +133,41 @@ public:
 
    static uint64_t getCPUFrequency();
 
+      // Functionality:
+      //    check the current time, 64bit, in microseconds.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    current time in microseconds.
+
+   static uint64_t getTime();
+
+      // Functionality:
+      //    trigger an event such as new connection, close, new data, etc. for "select" call.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    None.
+
+   static void triggerEvent();
+
+      // Functionality:
+      //    wait for an event to br triggered by "triggerEvent".
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    None.
+
+   static void waitForEvent();
+
 private:
    uint64_t m_ullSchedTime;             // next schedulled time
+
+   pthread_cond_t m_TickCond;
+   pthread_mutex_t m_TickLock;
+
+   static pthread_cond_t m_EventCond;
+   static pthread_mutex_t m_EventLock;
 
 private:
    static uint64_t s_ullCPUFrequency;	// CPU frequency : clock cycles per microsecond
@@ -243,5 +280,11 @@ public:
    static const int32_t m_iMaxMsgNo;            // maximum message number used in UDT
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+struct CIPAddress
+{
+   static bool ipcmp(const sockaddr* addr1, const sockaddr* addr2, const int& ver = AF_INET);
+};
 
 #endif

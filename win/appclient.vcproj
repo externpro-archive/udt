@@ -22,7 +22,7 @@
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				SmallerTypeCheck="TRUE"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
 				UsePrecompiledHeader="0"
